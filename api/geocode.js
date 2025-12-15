@@ -1,17 +1,35 @@
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
 export default async function handler(req, res) {
-  const { q } = req.query;
-  if (!q) {
-    return res.status(400).json({ error: "Missing query" });
+  setCors(res);
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
   }
 
-  const key = process.env.OPENWEATHER_KEY;
+  try {
+    const { q } = req.query;
 
-  const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
-    q
-  )}&limit=5&appid=${key}`;
+    if (!q) {
+      return res.status(400).json({ error: "Missing query" });
+    }
 
-  const r = await fetch(url);
-  const data = await r.json();
+    const key = process.env.OPENWEATHER_KEY;
+    if (!key) return res.status(500).json({ error: "Missing OPENWEATHER_KEY" });
 
-  res.status(r.status).json(data);
+    const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
+      q
+    )}&limit=5&appid=${key}`;
+
+    const r = await fetch(url);
+    const data = await r.json();
+
+    return res.status(r.status).json(data);
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
+  }
 }
